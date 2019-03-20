@@ -112,8 +112,8 @@ app.get('/home', function(req, res) {
         })
         .catch(function (err) {
             // display error message in case an error
-            req.flash('error', err);
-            res.render('pages/home', {
+            request.flash('error', err);
+            response.render('pages/home', {
                 my_title: 'Home Page',
                 data: '',
                 color: '',
@@ -142,8 +142,8 @@ app.get('/home/pick_color', function(req, res) {
     })
     .catch(error => {
         // display error message in case an error
-            req.flash('error', err);
-            res.render('pages/home', {
+            request.flash('error', err);
+            response.render('pages/home', {
                 my_title: 'Home Page',
                 data: '',
                 color: '',
@@ -177,8 +177,8 @@ app.post('/home/pick_color', function(req, res) {
     })
     .catch(error => {
         // display error message in case an error
-            req.flash('error', err);
-            res.render('pages/home', {
+            request.flash('error', err);
+            response.render('pages/home', {
                 my_title: 'Home Page',
                 data: '',
                 color: '',
@@ -190,79 +190,93 @@ app.post('/home/pick_color', function(req, res) {
 //team stats
 app.get('/team_stats', function(req, res) {
   var query = 'select * from football_games;';
-  db.any(query)
-        .then(function (rows) {
-            res.render('pages/team_stats',{
-        my_title: "TEAM STATS",
-        data: rows
-      })
+  var win_count = 'select count(*) FROM football_games where home_score > visitor_score;';
+  var loss_count = 'select count(*) FROM football_games where visitor_score > home_score;';
 
-        })
-        .catch(function (err) {
-            // display error message in case an error
-            request.flash('error', err);
-            response.render('pages/team_stats', {
-                title: 'TEAM STATS',
-                data: ''
-            })
-        })
-});
-
-//player_info 
-app.get('/player_info', function(req, res) {
-  var query = 'select id, name from football_players;';
-  db.any(query)
-        .then(function (rows) {
-            res.render('pages/player_info',{
-        my_title: "Player Information",
-        player: '',
-        gamesPlayed: '',
-        data: ''
-      })
-
-        })
-        .catch(function (err) {
-            // display error message in case an error
-            request.flash('error', err);
-            response.render('pages/home', {
-              my_title: "Player Information",
-              player: '',
-              gamesPlayed: '',
-              data: ''
-            })
-        })
-});
-
-app.get('/player_info/player', function(req, res) {
-  var playerData = req.query.player_choice;
-  var query = 'select id, name from football_players;'
-  var playerName = "select * from football_players where id = " + playerData +";";
-  var gamesPlayed = "select count(*) from football_games where" + playerData +";";
   db.task('get-everything', task => {
     return task.batch([
-        task.any(query),
-        task.any(player),
-        task.any(gamesPlayed)
+      task.any(query),
+      task.any(win_count),
+      task.any(loss_count)
       ]);
   })
-    .then(info => {
-      res.render('player/player_info', {
-        my_title: "PlAYER INFORMATION",
-        data: info[0],
-        displayInfo: info[1][0],
-        gamesPlayed: info[2][0]
+  .then(info => {
+	res.render('pages/team_stats',{
+      my_title: "Stats Page",
+      Games: info[0],
+      Games_Won: info[1].count,
+      Games_Loss: info[2].count
       })
+  })
+  .catch(error => {
+    request.flash('error', err);
+    response.render('pages/home',{
+      my_title: "Stats Page",
+      Games: '',
+      Games_Won: '',
+      Games_Loss: ''
     })
-    .catch(function (err) {
+  });
+});
+
+//player_info
+app.get('/player_info', function(req, res) {
+	var player_id = 'select id, name from football_players;';
+
+	db.any(player_id)
+		.then(function (players) {
+            res.render('pages/player_info',{
+				my_title: "Player Info",
+				players: players,
+				player_stats: '',
+				games_played: ''
+			})
+
+        })
+        .catch(function (err) {
             // display error message in case an error
-            request.flash('error', err);
-            response.render('pages/home', {
-              my_title: "Player Information",
-              player: '',
-              gamesPlayed: '',
-              data: ''
+            //request.flash('error', err);
+            console.log(err);
+            response.render('pages/player_info', {
+                my_title: 'Player Info',
+                players: null,
+                player_stats: '',
+				games_played: ''
             })
         })
+});
+
+app.get('/player_info/select_player', function(req, res) {
+	var player_select = req.query.player_choice;
+	var player_id = "select id, name from football_players;";
+	var player_stats = "select * from football_players where id = " + player_id + ";";
+	var games_played = "select count(*) from football_games where " + player_id + " = any(players);";
+
+	db.task('get-everything', task => {
+        return task.batch([
+            task.any(player_id),
+            task.any(player_stats),
+            task.any(games_played)
+        ]);
+    })
+    .then(info => {
+    	res.render('pages/player_info',{
+				my_title: 'Player Info',
+				players: info[0],
+				player_stats: info[1],
+				games_played: info[2]
+			})
+    })
+	.catch(err => {
+        // display error message in case an error
+            request.flash('error', err);
+            response.render('pages/player_info', {
+                my_title: 'Player Info',
+                players: '',
+				player_stats: '',
+				games_played: ''
+            })
+    });
 });
 
 app.listen(3000);

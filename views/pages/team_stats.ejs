@@ -23,25 +23,21 @@
 						2. Determine who the winner is and display it in the final column
 			-->
 			<%
-			if(data){
-				var table_data = ''
-					for (var i = 0; i < data.length; i++) {
-						table_data += '<tr><td>' + data[i].game_date +'</td>';
-						table_data += '<td>' + data[i].visitor_name +'</td>';
-						table_data += '<td>' + data[i].home_score +'</td>';
-						table_data += '<td>' + data[i].visitor_score +'</td>';
-						var home_data = data[i].home_score;
-						var visitor_data = data[i].visitor_score;
-						if(home_data > visitor_data){
-							table_data += '<td>' + 'CU Boulder' +'</td></tr>';
-						}
-						else{
-							table_data += '<td>' + data[i].visitor_name +'</td></tr>';
-						}
-					}
-		%>
-		<%- rows %>
-		<%}%>
+			if (games) {
+				games.forEach(function (row) { %>
+				<tr>
+					<td><%-row.game_date%></td>
+					<td><%-row.visitor_name%></td>
+					<td><%-row.home_score%></td>
+					<td><%-row.visitor_score%></td>
+				<% if (row.home_score > row.visitor_score) { %>
+						<td>CU Boulder</td>
+				<% } else { %>
+						<td><%-row.visitor_name%></td>
+					<% } %>
+				</tr>
+			 <% });
+			} %>
 
 		</table>
 		<br>
@@ -51,29 +47,14 @@
 				<th>Losses</th>
 			</tr>
 			<tr>
-				<%
-					if(data){
-						var win_count = 0
-						var loss_count = 0
-
-						for(var i = 0; i <data.length; i++){
-							if(data[i].home_score > data[i].visitor_score){
-								win_count++
-							}
-							else{
-								loss_count++
-							}
-						}
-						%>
-					<%}%>
 				<td> <!-- TODO: Display the total number of wins here.
 							    This value should come from your server.js files query, don't calculate it in this file! -->
-					<%- win_count %>
+					%-Games_Won[0].count%>
 				</td>
 
 				<td> <!-- TODO: Display the total number of losses here.
 							    This value should come from your server.js files query, don't calculate it in this file! -->
-					<%- loss_count %>
+					%-Games_Loss[0].count%>
 				</td>
 			</tr>
 		</table>
